@@ -1,5 +1,5 @@
 {
-  "name": "@rotaready/dynamodb-better-batch",
+  "name": "dynamodb-better-batch",
   "version": "0.1.0",
   "description": "",
   "main": "lib/index.js",
@@ -16,8 +16,7 @@
     "eslint-plugin-react": "^6.10.0"
   },
   "scripts": {
-    "prepublish": "rm -rf lib && babel src -d lib",
-    "test": "npm run prepublish && node test"
+    "prepublish": "rm -rf lib && babel src -d lib"
   },
   "repository": {
     "type": "git",

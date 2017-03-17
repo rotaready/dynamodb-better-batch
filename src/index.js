@@ -8,36 +8,60 @@ class BetterBatch {
         this.backoffFunction = backoffFunction;
     }
     
-    writeChunk(chunk, callback) {
+    processChunk(chunk, operation, unprocessedCheck, callback) {
         let retryCount = 0;
+        let shouldRetry = false;
         
-        async.whilst(() => retryCount <= this.maxRetries, (callback) => {
-            this.docClient.batchWrite(chunk, (err, data) => {
+        async.whilst(() => shouldRetry, (callback) => {
+            operation(chunk, (err, data) => {
                 if (err) return callback(err);
                 
-                if (Object.keys(data.UnprocessedItems).length) {
-                    chunk.RequestItems = data.UnprocessedItems;
+                const unprocessed = unprocessedCheck(data);
+                
+                if (unprocessed) {
+                    chunk.RequestItems = unprocessed;
                     
-                    retryCount += 1;
+                    if (retryCount < this.maxRetries) {
+                        shouldRetry = true;
+                        retryCount += 1;
+                    } else {
+                        shouldRetry = false;
+                        return callback();
+                    }
+                    
                     return setTimeout(() => callback(), this.backoffFunction(retryCount));
                 }
                 
-                retryCount = 0;
+                shouldRetry = false;
                 callback();
             });
         }, callback);
     }
     
-    batchWrite(params, callback) {
-        const chunks = chunkItems(params);
-        
+    batchOperation(operation, chunks, unprocessedCheck, callback) {
         async.eachSeries(chunks, (chunk, callback) => {
-            this.writeChunk(chunk, callback);
-        }, (err) => {
-            if (err) return callback(err);
-            
-            callback();
-        });
+            this.processChunk(chunk, operation, unprocessedCheck, callback);
+        }, callback);
+    }
+    
+    batchGet(params, callback) {
+        const chunks = chunkItems(params, 100, true);
+        
+        this.batchOperation(this.docClient.batchGet, chunks, (data) => {
+            if (Object.keys(data.UnprocessedKeys).length) {
+                return data.UnprocessedKeys;
+            }
+        }, callback);
+    }
+    
+    batchWrite(params, callback) {
+        const chunks = chunkItems(params, 25);
+        
+        this.batchOperation(this.docClient.batchWrite, chunks, (data) => {
+            if (Object.keys(data.UnprocessedItems).length) {
+                return data.UnprocessedItems;
+            }
+        }, callback);
     }
 }
 

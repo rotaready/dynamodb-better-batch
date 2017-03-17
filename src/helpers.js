@@ -12,11 +12,14 @@ function chunkItems(params, chunkSize, isGet) {
     const tableKeys = Object.keys(params.RequestItems);
     // We eventually return this
     const chunks = [];
-
+    
+    const nonRequestItemsParams = Object.assign({}, params);
+    delete params.RequestItems;
+    
     // Holds the size of the current chunk we're building
     let currentChunkSize = 0;
     // Gets pushed in to the array then reassigned
-    let currentChunk = { RequestItems: {} };
+    let currentChunk = { RequestItems: {}, ...nonRequestItemsParams };
     
     // Loop through each of the tables
     for (let k = 0; k < tableKeys.length; k += 1) {

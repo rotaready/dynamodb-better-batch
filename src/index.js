@@ -52,8 +52,10 @@ class BetterBatch {
                 callback();
             });
         }, (err) => {
+            if (err) return callback(err);
+
             // Note allItems is just an empty map if this is a write op, or the get returned no items
-            callback(err, allItems);
+            callback(null, allItems);
         });
     }
     
@@ -76,13 +78,15 @@ class BetterBatch {
                 callback(err);
             });
         }, (err) => {
+            if (err) return callback(err);
+            
             const mapAsLiteral = {};
             
             allItems.forEach((items, table) => {
                 mapAsLiteral[table] = items;
             });
             
-            callback(err, mapAsLiteral);
+            callback(null, mapAsLiteral);
         });
     }
     
@@ -126,7 +130,9 @@ class BetterBatch {
                 callback();
             });
         }, (err) => {
-            callback(err, items);
+            if (err) return callback(err);
+            
+            callback(null, items);
         });
     }
 }

@@ -64,6 +64,8 @@ class BetterBatch {
         
         async.eachSeries(chunks, (chunk, callback) => {
             this.processChunk(chunk, operation, unprocessedCheck, (err, itemMap) => {
+                if (err) return callback(err);
+                
                 // Item map empty if it's a write or the get returned nothing
                 itemMap.forEach((items, table) => {
                     if (!allItems.has(table)) allItems.set(table, []);
@@ -75,7 +77,7 @@ class BetterBatch {
                     allItems.set(table, currentItems);
                 });
                 
-                callback(err);
+                callback();
             });
         }, (err) => {
             if (err) return callback(err);
